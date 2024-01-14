@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  backend:
+    image: flow-backend
+    ports:
+      - "8080:8080"
+
+  frontend:
+    image: front-end
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
