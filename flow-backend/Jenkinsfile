@@ -1,0 +1,54 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build and Test') {
+            steps {
+                script {
+                    // Build and test the backend
+                    sh docker-compose -f docker-compose.yml up -d flow-backend
+                    sh docker-compose -f docker-compose.yml exec flow-backend mvn clean install
+
+                    // Build and test the frontend
+                    sh docker-compose -f docker-compose.yml up -d front-end
+                    sh docker-compose -f docker-compose.yml exec frontend npm install
+                }
+            }
+        }
+
+        stage('Deploy Locally') {
+            steps {
+                script {
+                    // Deploy the backend
+                    sh docker-compose -f docker-compose.yml up -d flow-backend
+
+                    // Deploy the frontend
+                    docker-compose -f docker-compose.yml up -d front-end
+                }
+            }
+        }
+
+        stage('Run Integration Tests') {
+            steps {
+                script {
+                    sh docker-compose -f docker-compose.yml exec front-end npm test
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                // Clean up Docker containers after the pipeline is complete
+                docker-compose -f docker-compose.yml down
+            }
+        }
+    }
+}
